@@ -96,6 +96,9 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
     host     = aws_db_instance.postgres.address
     port     = aws_db_instance.postgres.port
     dbname   = var.db_name
-    url      = "postgresql://${var.db_username}:${random_password.master.result}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/${var.db_name}?schema=public&sslmode=require"
+    # random_password permite caracteres reservados de URI (#, %, ?, :, [, ]) no seu
+    # charset completo por design (mais entropia) - urlencode() evita que a senha
+    # gerada quebre o parsing da connection string por um cliente Postgres/Prisma.
+    url = "postgresql://${var.db_username}:${urlencode(random_password.master.result)}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/${var.db_name}?schema=public&sslmode=require"
   })
 }

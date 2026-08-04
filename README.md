@@ -17,7 +17,7 @@ Justificativa completa da escolha do motor/instância em [RFC-0002](https://gith
 
 ## Status
 
-✅ Terraform completo (RDS `db.t3.micro`, security group fail-closed, segredo no Secrets Manager). Ainda não aplicado contra a conta AWS real — ver seção abaixo.
+✅ Aplicado contra a conta AWS real em 2026-08-03 (RDS `db.t3.micro` disponível, security group fail-closed, segredo no Secrets Manager). CI de `plan`/`apply` verde. Falta: `oficina-api` consumir a connection string em produção (depende do deploy do cluster — ver `oficina-infra-k8s`).
 
 ## Deploy e execução
 

@@ -20,6 +20,6 @@ output "db_secret_arn" {
 
 output "database_url" {
   description = "Connection string completa (Prisma-compatible). Sensível — não expor em logs de CI."
-  value       = "postgresql://${var.db_username}:${random_password.master.result}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/${var.db_name}?schema=public&sslmode=require"
+  value       = "postgresql://${var.db_username}:${urlencode(random_password.master.result)}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/${var.db_name}?schema=public&sslmode=require"
   sensitive   = true
 }
