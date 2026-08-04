@@ -38,6 +38,27 @@ resource "aws_vpc_security_group_ingress_rule" "postgres_from_allowed_cidrs" {
   description       = "CIDR autorizado explicitamente via var.allowed_cidr_blocks"
 }
 
+# EC2 e RDS estao na mesma VPC, entao o trafego entre eles usa roteamento
+# interno com o IP PRIVADO da EC2, nunca o publico - restringir por CIDR do
+# IP publico (acima) nao tem efeito nenhum para esse trafego. Referenciar o
+# security group da EC2 diretamente resolve isso sem precisar rastrear IP a
+# cada vez que a instancia e recriada (oficina-infra-k8s).
+data "aws_security_group" "cluster_host" {
+  filter {
+    name   = "group-name"
+    values = ["oficina-cluster-sg"]
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "postgres_from_cluster_host" {
+  security_group_id            = aws_security_group.rds.id
+  referenced_security_group_id = data.aws_security_group.cluster_host.id
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+  description                  = "EC2 do cluster Kind (oficina-infra-k8s) - mesma VPC, trafego usa IP privado"
+}
+
 resource "random_password" "master" {
   length           = 32
   special          = true
