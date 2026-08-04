@@ -1,0 +1,13 @@
+# Copie para terraform.tfvars e ajuste. Nao commitar terraform.tfvars (ja esta no .gitignore).
+
+aws_region        = "us-east-2"
+db_identifier     = "oficina-db"
+db_name           = "oficina_db"
+db_username       = "oficina_admin"
+db_instance_class = "db.t3.micro"
+
+# Vazio por padrao (fail-closed). Adicione o IP publico da EC2 (saida do oficina-infra-k8s)
+# e, se precisar rodar migrations localmente, seu proprio IP com /32.
+allowed_cidr_blocks = [
+  # "203.0.113.10/32", # exemplo: IP publico da EC2 do oficina-infra-k8s
+]
