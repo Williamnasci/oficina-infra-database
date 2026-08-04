@@ -29,9 +29,9 @@ variable "db_instance_class" {
 }
 
 variable "db_engine_version" {
-  description = "Versão do engine PostgreSQL."
+  description = "Versão do engine PostgreSQL. 16.4 nao esta mais disponivel na regiao/conta; 16.14 e a mais recente da serie 16 (compativel com o parameter group family postgres16)."
   type        = string
-  default     = "16.4"
+  default     = "16.14"
 }
 
 variable "db_allocated_storage" {
@@ -41,9 +41,9 @@ variable "db_allocated_storage" {
 }
 
 variable "db_backup_retention_days" {
-  description = "Dias de retenção de backup automático."
+  description = "Dias de retenção de backup automático. Contas novas em Free Tier tem um teto mais baixo do que os 7 dias normalmente permitidos (a API rejeita em runtime se exceder); 1 é o valor seguro."
   type        = number
-  default     = 7
+  default     = 1
 }
 
 variable "publicly_accessible" {
