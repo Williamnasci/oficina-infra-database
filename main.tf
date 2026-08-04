@@ -59,6 +59,20 @@ resource "aws_vpc_security_group_ingress_rule" "postgres_from_cluster_host" {
   description                  = "EC2 do cluster Kind (oficina-infra-k8s) - mesma VPC, trafego usa IP privado"
 }
 
+# oficina-lambda-auth roda fora de VPC (decisao consciente para evitar o custo
+# de NAT Gateway / VPC endpoint - ver docs/adr/0006 no oficina-api). Sem VPC,
+# o IP de saida da Lambda nao e fixo nem documentado como range estavel, entao
+# nao da para restringir por CIDR - a mitigacao e senha forte (random_password)
+# + TLS obrigatorio (rds.force_ssl), nao isolamento de rede.
+resource "aws_vpc_security_group_ingress_rule" "postgres_from_lambda_auth" {
+  security_group_id = aws_security_group.rds.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 5432
+  to_port           = 5432
+  ip_protocol       = "tcp"
+  description       = "oficina-lambda-auth roda fora da VPC - ver ADR-0006"
+}
+
 resource "random_password" "master" {
   length           = 32
   special          = true
