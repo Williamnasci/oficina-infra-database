@@ -17,8 +17,30 @@ Justificativa completa da escolha do motor/instância em [RFC-0002](https://gith
 
 ## Status
 
-🚧 Em construção. Estrutura de repositório e branch protection configuradas; o schema Prisma existente em `oficina-api/prisma/schema.prisma` será aplicado contra o endpoint RDS assim que a instância for provisionada.
+✅ Terraform completo (RDS `db.t3.micro`, security group fail-closed, segredo no Secrets Manager). Ainda não aplicado contra a conta AWS real — ver seção abaixo.
 
 ## Deploy e execução
 
-_A preencher assim que o pipeline de CI/CD e o deploy estiverem funcionais._
+### Pré-requisitos (uma vez só)
+
+1. Bucket S3 de backend remoto (compartilhado com `oficina-infra-k8s`) — ver instruções no `oficina-api` (`docs/phase-3-plan.md`).
+2. Secrets do repositório GitHub (Settings → Secrets and variables → Actions):
+   - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` — credenciais de um usuário/role IAM com permissão para RDS, EC2 (SG), Secrets Manager e o bucket de state. **Não usar as credenciais root.**
+
+### Local
+
+```bash
+cp terraform.tfvars.example terraform.tfvars
+# edite allowed_cidr_blocks com o IP publico da EC2 (saida de oficina-infra-k8s)
+terraform init
+terraform plan
+terraform apply
+```
+
+### CI/CD
+
+`.github/workflows/terraform.yml`: `terraform plan` em todo PR; `terraform apply` automático ao mergear em `main` (job `apply`, ambiente `production`).
+
+## Consumindo as credenciais
+
+A aplicação (`oficina-api`) e a Lambda (`oficina-lambda-auth`) devem ler a connection string do Secrets Manager (`oficina/database/credentials`, chave `url`), não de variável de ambiente estática — evita duplicar a senha em múltiplos repositórios.
