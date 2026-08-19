@@ -25,7 +25,7 @@ Justificativa completa da escolha do motor/instância em [RFC-0002](https://gith
 
 1. Bucket S3 de backend remoto (compartilhado com `oficina-infra-k8s`) — ver instruções no `oficina-api` (`docs/phase-3-plan.md`).
 2. Secrets do repositório GitHub (Settings → Secrets and variables → Actions):
-   - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` — credenciais de um usuário/role IAM com permissão para RDS, EC2 (SG), Secrets Manager e o bucket de state. **Não usar as credenciais root.**
+   - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` — credenciais **temporárias** da sessão do AWS Academy Learner Lab (AWS Details → Show, na tela do lab; a conta não permite criar um usuário IAM permanente — `iam:CreateUser` é negado pelo `LabRole`). Expiram com a sessão (~4h) — atualize os 3 secrets antes de rodar o workflow manualmente.
 
 ### Local
 
@@ -39,7 +39,9 @@ terraform apply
 
 ### CI/CD
 
-`.github/workflows/terraform.yml`: `terraform plan` em todo PR; `terraform apply` automático ao mergear em `main` (job `apply`, ambiente `production`).
+`.github/workflows/terraform.yml`: `terraform plan` roda automático em todo PR/push (falha por autenticação se a sessão do lab estiver expirada nos secrets — atualize antes de dar push, não é bug). O job `apply` (ambiente `production`) **não roda mais automático no merge** — só via disparo manual (`gh workflow run terraform.yml` ou pela aba Actions), porque a conta AWS Academy Learner Lab não permite uma credencial permanente segura para guardar como secret.
+
+> **Nota:** este projeto migrou de uma conta AWS pessoal (Free Tier) para uma conta **AWS Academy Learner Lab** — orçamento fixo de USD 50 para todo o curso, sessão de lab de ~4h renovável. Diferente da EC2 do `oficina-infra-k8s`, o RDS **não é encerrado automaticamente** pelo lab entre sessões (só instâncias EC2 são), então ele continua consumindo o orçamento mesmo com o lab "desligado" — `deletion_protection = true` permanece intencional (ver comentário em `main.tf`), mas vale monitorar o gasto acumulado.
 
 ## Consumindo as credenciais
 
