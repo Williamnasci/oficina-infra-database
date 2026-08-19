@@ -4,9 +4,9 @@
 # ele referencia. Locking nativo do S3 (sem DynamoDB) requer Terraform >= 1.10.
 terraform {
   backend "s3" {
-    bucket       = "oficina-tfstate-778031418843"
+    bucket       = "oficina-tfstate-804680418945"
     key          = "database/terraform.tfstate"
-    region       = "us-east-2"
+    region       = "us-east-1"
     encrypt      = true
     use_lockfile = true
   }

@@ -1,6 +1,6 @@
 # Copie para terraform.tfvars e ajuste. Nao commitar terraform.tfvars (ja esta no .gitignore).
 
-aws_region        = "us-east-2"
+aws_region        = "us-east-1"
 db_identifier     = "oficina-db"
 db_name           = "oficina_db"
 db_username       = "oficina_admin"
