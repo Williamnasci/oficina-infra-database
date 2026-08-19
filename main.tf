@@ -106,9 +106,16 @@ resource "aws_db_instance" "postgres" {
 
   multi_az                = false
   backup_retention_period = var.db_backup_retention_days
-  deletion_protection     = false
-  skip_final_snapshot     = true
-  apply_immediately       = true
+  # deletion_protection=true: o RDS nao faz parte da rotina de destruir/
+  # recriar entre sessoes (so a EC2 do cluster faz - ver oficina-infra-k8s),
+  # entao nao ha friccao operacional em proteger contra destroy acidental.
+  # skip_final_snapshot=false: um "terraform destroy" real (intencional)
+  # ainda funciona, so exige remover deletion_protection primeiro (2 passos
+  # em vez de 1) e deixa um snapshot final em vez de apagar sem recuperacao.
+  deletion_protection       = true
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "${var.db_identifier}-final"
+  apply_immediately         = true
 
   # Forca TLS nas conexoes, mitigacao parcial por o endpoint ser publico (ver ADR-0006).
   parameter_group_name = aws_db_parameter_group.force_ssl.name
