@@ -59,18 +59,24 @@ resource "aws_vpc_security_group_ingress_rule" "postgres_from_cluster_host" {
   description                  = "EC2 do cluster Kind (oficina-infra-k8s) - mesma VPC, trafego usa IP privado"
 }
 
-# oficina-lambda-auth roda fora de VPC (decisao consciente para evitar o custo
-# de NAT Gateway / VPC endpoint - ver docs/adr/0006 no oficina-api). Sem VPC,
-# o IP de saida da Lambda nao e fixo nem documentado como range estavel, entao
-# nao da para restringir por CIDR - a mitigacao e senha forte (random_password)
-# + TLS obrigatorio (rds.force_ssl), nao isolamento de rede.
-resource "aws_vpc_security_group_ingress_rule" "postgres_from_lambda_auth" {
+# ATENCAO: isto abre 5432 para QUALQUER host na internet, nao apenas para a
+# Lambda - "postgres_from_lambda_auth" descreve o MOTIVO da regra (permitir a
+# oficina-lambda-auth, que roda fora de VPC, sem IP de saida fixo/documentado
+# como range estavel), nao uma restricao tecnica real. Nao ha como restringir
+# por CIDR sem colocar a Lambda dentro da VPC (NAT Gateway ou VPC Interface
+# Endpoint para Secrets Manager, ambos com custo mensal - ver docs/adr/0006 no
+# oficina-api). Decisao consciente de trade-off: fail-closed em rede vira
+# fail-open, mitigado por senha forte (random_password) + TLS obrigatorio com
+# validacao real de identidade do servidor (rds.force_ssl + CA bundle da AWS
+# nos clientes), nao por isolamento de rede. Reavaliar se o orcamento permitir
+# mover a Lambda para dentro da VPC.
+resource "aws_vpc_security_group_ingress_rule" "postgres_open_for_lambda_auth" {
   security_group_id = aws_security_group.rds.id
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 5432
   to_port           = 5432
   ip_protocol       = "tcp"
-  description       = "oficina-lambda-auth roda fora da VPC - ver ADR-0006"
+  description       = "ABERTO GLOBALMENTE para viabilizar oficina-lambda-auth (fora de VPC) - ver ADR-0006"
 }
 
 resource "random_password" "master" {

@@ -17,7 +17,7 @@ Justificativa completa da escolha do motor/instância em [RFC-0002](https://gith
 
 ## Status
 
-✅ Aplicado contra a conta AWS real em 2026-08-03 (RDS `db.t3.micro` disponível, security group fail-closed, segredo no Secrets Manager). CI de `plan`/`apply` verde. Falta: `oficina-api` consumir a connection string em produção (depende do deploy do cluster — ver `oficina-infra-k8s`).
+✅ Aplicado contra a conta AWS real (RDS `db.t3.micro` disponível, TLS obrigatório via `rds.force_ssl`, segredo no Secrets Manager). CI de `plan`/`apply` verde. Em uso em produção por **ambos** os consumidores: `oficina-api` (aplicação principal, com o bundle da CA da RDS embutido para validar a identidade do servidor) e `oficina-lambda-auth` (consulta o cliente por CPF antes de emitir o JWT).
 
 ## Deploy e execução
 
