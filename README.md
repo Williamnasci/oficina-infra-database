@@ -44,3 +44,25 @@ terraform apply
 ## Consumindo as credenciais
 
 A aplicação (`oficina-api`) e a Lambda (`oficina-lambda-auth`) devem ler a connection string do Secrets Manager (`oficina/database/credentials`, chave `url`), não de variável de ambiente estática — evita duplicar a senha em múltiplos repositórios.
+
+## Swagger / Postman
+
+Não aplicável — este repositório não expõe API própria, só provisiona o RDS. O contrato de dados é o schema Prisma (`oficina-api`) e o diagrama ER em [database-er.md](https://github.com/Williamnasci/oficina-api/blob/main/docs/database-er.md).
+
+## Diagrama
+
+Visão focal deste repositório (consumidores do banco — o diagrama completo da solução está no [Diagrama de Componentes](https://github.com/Williamnasci/oficina-api/blob/main/docs/architecture-components.md) do `oficina-api`):
+
+```mermaid
+flowchart LR
+    subgraph DB["oficina-infra-database (este repo)"]
+        RDS[("RDS PostgreSQL\ndb.t3.micro, TLS obrigatorio")]
+        Secret["Secrets Manager\noficina/database/credentials"]
+    end
+
+    RDS -.->|connection string| Secret
+    API["oficina-api\n(aplicacao principal)"] -->|TLS, CA da RDS embutida| RDS
+    Lambda["oficina-lambda-auth\n(auth-login)"] -->|TLS, sem VPC - ver ADR-0006| RDS
+    API -->|le| Secret
+    Lambda -->|le| Secret
+```
