@@ -4,7 +4,7 @@ Infraestrutura do banco de dados gerenciado (via Terraform) do Tech Challenge Fa
 
 ## Propósito
 
-Provisiona, via Terraform, a instância **Amazon RDS PostgreSQL** (`db.t3.micro`, single-AZ, Free Tier) usada tanto pela aplicação principal (`oficina-api`) quanto pela Lambda de autenticação (`oficina-lambda-auth`) — mesma base de dados, sem duplicação de dados de cliente.
+Provisiona, via Terraform, a instância **Amazon RDS PostgreSQL** (`db.t3.micro`, single-AZ) usada tanto pela aplicação principal (`oficina-api`) quanto pela Lambda de autenticação (`oficina-lambda-auth`) — mesma base de dados, sem duplicação de dados de cliente.
 
 Justificativa completa da escolha do motor/instância em [RFC-0002](https://github.com/Williamnasci/oficina-api/blob/main/docs/rfc/0002-escolha-do-banco-de-dados-gerenciado.md). Diagrama ER e explicação dos relacionamentos em [database-er.md](https://github.com/Williamnasci/oficina-api/blob/main/docs/database-er.md).
 
@@ -40,8 +40,6 @@ terraform apply
 ### CI/CD
 
 `.github/workflows/terraform.yml`: `terraform plan` roda automático em todo PR/push (falha por autenticação se a sessão do lab estiver expirada nos secrets — atualize antes de dar push, não é bug). O job `apply` (ambiente `production`) **não roda mais automático no merge** — só via disparo manual (`gh workflow run terraform.yml` ou pela aba Actions), porque a conta AWS Academy Learner Lab não permite uma credencial permanente segura para guardar como secret.
-
-> **Nota:** este projeto migrou de uma conta AWS pessoal (Free Tier) para uma conta **AWS Academy Learner Lab** — orçamento fixo de USD 50 para todo o curso, sessão de lab de ~4h renovável. Diferente da EC2 do `oficina-infra-k8s`, o RDS **não é encerrado automaticamente** pelo lab entre sessões (só instâncias EC2 são), então ele continua consumindo o orçamento mesmo com o lab "desligado" — `deletion_protection = true` permanece intencional (ver comentário em `main.tf`), mas vale monitorar o gasto acumulado.
 
 ## Consumindo as credenciais
 
