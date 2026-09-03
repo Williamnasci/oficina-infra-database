@@ -38,11 +38,6 @@ resource "aws_vpc_security_group_ingress_rule" "postgres_from_allowed_cidrs" {
   description       = "CIDR autorizado explicitamente via var.allowed_cidr_blocks"
 }
 
-# EC2 e RDS estao na mesma VPC, entao o trafego entre eles usa roteamento
-# interno com o IP PRIVADO da EC2, nunca o publico - restringir por CIDR do
-# IP publico (acima) nao tem efeito nenhum para esse trafego. Referenciar o
-# security group da EC2 diretamente resolve isso sem precisar rastrear IP a
-# cada vez que a instancia e recriada (oficina-infra-k8s).
 data "aws_security_group" "cluster_host" {
   filter {
     name   = "group-name"
@@ -59,17 +54,6 @@ resource "aws_vpc_security_group_ingress_rule" "postgres_from_cluster_host" {
   description                  = "EC2 do cluster Kind (oficina-infra-k8s) - mesma VPC, trafego usa IP privado"
 }
 
-# ATENCAO: isto abre 5432 para QUALQUER host na internet, nao apenas para a
-# Lambda - "postgres_from_lambda_auth" descreve o MOTIVO da regra (permitir a
-# oficina-lambda-auth, que roda fora de VPC, sem IP de saida fixo/documentado
-# como range estavel), nao uma restricao tecnica real. Nao ha como restringir
-# por CIDR sem colocar a Lambda dentro da VPC (NAT Gateway ou VPC Interface
-# Endpoint para Secrets Manager, ambos com custo mensal - ver docs/adr/0006 no
-# oficina-api). Decisao consciente de trade-off: fail-closed em rede vira
-# fail-open, mitigado por senha forte (random_password) + TLS obrigatorio com
-# validacao real de identidade do servidor (rds.force_ssl + CA bundle da AWS
-# nos clientes), nao por isolamento de rede. Reavaliar se o orcamento permitir
-# mover a Lambda para dentro da VPC.
 resource "aws_vpc_security_group_ingress_rule" "postgres_open_for_lambda_auth" {
   security_group_id = aws_security_group.rds.id
   cidr_ipv4         = "0.0.0.0/0"
@@ -106,18 +90,11 @@ resource "aws_db_instance" "postgres" {
 
   multi_az                = false
   backup_retention_period = var.db_backup_retention_days
-  # deletion_protection=true: o RDS nao faz parte da rotina de destruir/
-  # recriar entre sessoes (so a EC2 do cluster faz - ver oficina-infra-k8s),
-  # entao nao ha friccao operacional em proteger contra destroy acidental.
-  # skip_final_snapshot=false: um "terraform destroy" real (intencional)
-  # ainda funciona, so exige remover deletion_protection primeiro (2 passos
-  # em vez de 1) e deixa um snapshot final em vez de apagar sem recuperacao.
   deletion_protection       = true
   skip_final_snapshot       = false
   final_snapshot_identifier = "${var.db_identifier}-final"
   apply_immediately         = true
 
-  # Forca TLS nas conexoes, mitigacao parcial por o endpoint ser publico (ver ADR-0006).
   parameter_group_name = aws_db_parameter_group.force_ssl.name
 }
 
@@ -144,9 +121,6 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
     host     = aws_db_instance.postgres.address
     port     = aws_db_instance.postgres.port
     dbname   = var.db_name
-    # random_password permite caracteres reservados de URI (#, %, ?, :, [, ]) no seu
-    # charset completo por design (mais entropia) - urlencode() evita que a senha
-    # gerada quebre o parsing da connection string por um cliente Postgres/Prisma.
     url = "postgresql://${var.db_username}:${urlencode(random_password.master.result)}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/${var.db_name}?schema=public&sslmode=require"
   })
 }
